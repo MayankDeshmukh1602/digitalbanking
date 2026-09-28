@@ -1,0 +1,78 @@
+from flask import Flask, request
+import sqlite3
+
+app = Flask(__name__)
+
+
+def users():
+    connect = sqlite3.connect('ecommerce.db')
+    cursor = connect.cursor()
+
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS users (
+            user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name VARCHAR,
+            email VARCHAR UNIQUE,
+            password_hash VARCHAR ,
+            role Varchar ,
+            created_at Varchar
+        )
+    ''')
+
+    connect.commit()
+    connect.close()
+
+@app.route('/')
+def home():
+    return "E-commerce API is running"
+
+@app.route('/register', methods=['POST'])
+def register():
+
+    name = request.json.get('name')
+    email = request.json.get('email')
+    password = request.json.get('password')
+
+    connect = sqlite3.connect('ecommerce.db')
+    cursor = connect.cursor()
+
+    cursor.execute('''
+        INSERT INTO users
+        (name, email, password_hash, role, created_at)
+        VALUES (?, ?, ?, ?, ?)
+    ''', (name, email, password, 'customer', '27/09/2026'))
+
+    connect.commit()
+    connect.close()
+
+    return {
+        "message": "User registered successfully"
+    }
+
+@app.route('/all_users' , methods = ['GET'])
+def all_users():
+    connect = sqlite3.connect('ecommerce.db')
+    cursor = connect.cursor()
+    cursor.execute('SELECT * FROM users')
+    users = cursor.fetchall()
+    connect.close()
+    return {"users": users}
+
+@app.route('/login' , methods = ['POST'])
+def login():
+    email = request.json.get('email')
+    password = request.json.get('password')
+    connect = sqlite3.connect('ecommerce.db')
+    cursor = connect.cursor()
+    cursor.execute('''
+    SELECT * FROM users 
+    WHERE email = ? AND password_hash = ?
+        ''' , (email , password))
+    users = cursor.fetchone()
+    connect.close()
+    if users:
+        return{"message" :'Login succesfull...'}
+    else:
+        return{"message" : 'Invalid email or password.'}
+users()
+app.run(port=5005)
